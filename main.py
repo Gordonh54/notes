@@ -1,5 +1,6 @@
 #https://docs.google.com/presentation/d/15uicqMslD67x_EETKDGBl-pCXlGqvAXExTfGSasSfas/edit?usp=sharing
 #https://docs.google.com/presentation/d/15uicqMslD67x_EETKDGBl-pCXlGqvAXExTfGSasSfas/edit#slide=id.gc6f919934_0_0
+#https://docs.python.org/3/library/curses.html
 x=input("what is your name?\n")
 print("Hi " + x + ", nice to meet you!" )
 input("press enter to exit")

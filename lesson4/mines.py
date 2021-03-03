@@ -2,7 +2,7 @@ import curses
 import math
 import random
 
-#global variables for the entire game
+
 gameover=True
 
 
@@ -101,10 +101,10 @@ def paintcell(stdscr, cell, colors, reverse=False, show=False):
 
 def gameoverfunction(stdscr, colors):
   sh, sw = stdscr.getmaxyx()
-  gameovermsg="haha you lose nerd"
+  gameovermsg="haha you lose"
   stdscr.addstr(1, sw//2-len(gameovermsg)//2, gameovermsg, curses.color_pair(161))
   gameover = False
-  
+
 
 #open all mines
 def blast(stdscr, field, size, colors): 
@@ -128,8 +128,10 @@ current method; might replace later """
 def digcell(stdscr, cell, field, size, colors):
   if cell[2] == -1 and cell[3]!="flagged":
     blast(stdscr, field, size, colors)
+    return False
   elif cell[3] == "covered" and cell[3]!="flagged":
     cell[3]="open"
+    return True
 
 def opensurrounding(cell):
   return
@@ -169,7 +171,8 @@ def window(stdscr):
     nr, nc = 0, 0
     # paint the top left cell reverse color.
     paintcell(stdscr, field[r][c], colors, True)
-
+    stdscr.addstr(1,sw//3,"                                                  ")
+    
     while gameover:
       userkey = stdscr.getch()
       # 27 ESC, 113 is q
@@ -192,7 +195,7 @@ def window(stdscr):
         flagcell(field[r][c])
       elif userkey in [100]:
         #dig cell, if a mine all mines are dug
-        digcell(stdscr, field[r][c], field, size, colors)
+        gameover = digcell(stdscr, field[r][c], field, size, colors)
       elif userkey in [32]:
         opensurrounding(field[r][c])
       stdscr.addstr(0,0,"                                             ")
@@ -203,9 +206,11 @@ def window(stdscr):
       paintcell(stdscr, field[nr][nc], colors, True)
       # reset the current cell row and column id
       r, c = nr, nc
+    if userkey in [27, 133]:
+      break
     userkey = stdscr.getch()
     if userkey in [27, 133]:
       break
-    elif userkey in [100,102]: continue
+    
 
 curses.wrapper(window)

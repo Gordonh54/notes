@@ -41,7 +41,7 @@ def initfield(center, size):
               continue # skip
           for sr in [r -1, r, r + 1]:
               for sc in [c - 1, c, c + 1]:
-                  #check if out of bombs
+                  #check if out of range
                   if sr < 0 or sr > size[0] - 1 or sc < 0 or sc > size[1] - 1:
                       continue # out of field, skip
                   elif sr == r and sc == c:
@@ -103,8 +103,6 @@ def gameoverfunction(stdscr, colors):
   sh, sw = stdscr.getmaxyx()
   gameovermsg="haha you lose"
   stdscr.addstr(1, sw//2-len(gameovermsg)//2, gameovermsg, curses.color_pair(161))
-  gameover = False
-
 
 #open all mines
 def blast(stdscr, field, size, colors): 
@@ -125,16 +123,36 @@ def flagcell(cell):
 
 """
 current method; might replace later """
+#simplify
 def digcell(stdscr, cell, field, size, colors):
   if cell[2] == -1 and cell[3]!="flagged":
     blast(stdscr, field, size, colors)
     return False
   elif cell[3] == "covered" and cell[3]!="flagged":
     cell[3]="open"
+    paintcell(stdscr, cell, colors)
     return True
+  else: return True
 
-def opensurrounding(cell):
-  return
+#currently it only opens one square
+def opensurrounding(stdscr, field, row, column, size, colors):
+  if field[row][column][3] == "covered" or field[row][column][3]=="flagged":
+    return True
+  for r in [row-1, row, row+1]:
+    for c in [column-1, column, column+1]:
+      g=True
+      if r < 0 or r > size[0] - 1 or c < 0 or c > size[1] - 1 or field[r][c][3] == "open":
+        continue # out of field, skip
+      
+      g = digcell(stdscr,field[r][c], field, size, colors)
+      if field[r][c][2] == 0:
+        g= opensurrounding(stdscr,field, r, c, size, colors)
+        if g == False: 
+          return g
+      #if the square is 0, dig then opensurrounding
+  return g
+      
+  return False
 
 def window(stdscr):
   #initialize color pairs
@@ -152,17 +170,6 @@ def window(stdscr):
   # set this a list [row, column]
   size = [10, 20]
 
-  """
-  not really necessary as it's now being executed at the beginning of the game
-  field = initfield(center, size)
-  paintfield(stdscr, field, size, colors)
-
-  r, c = 0, 0 #row and column coordinates
-  nr, nc = 0, 0
-  # paint the top left cell reverse color.
-  paintcell(stdscr, field[r][c], colors, True)
-  #stdscr.addstr(field[r][c][0], field[r][c][1], str(field[r][c][2]), curses.A_REVERSE)
-  """
   while True:
     gameover = True
     field = initfield(center, size)
@@ -196,10 +203,13 @@ def window(stdscr):
       elif userkey in [100]:
         #dig cell, if a mine all mines are dug
         gameover = digcell(stdscr, field[r][c], field, size, colors)
+        if field[r][c][2] == -1:
+          field[r][c][3] =="blasted"
       elif userkey in [32]:
-        opensurrounding(field[r][c])
+        gameover = opensurrounding(stdscr, field, r,c, size, colors)
+
       stdscr.addstr(0,0,"                                             ")
-      stdscr.addstr(0,0, "{0},{1},{2},{3}".format(nr,nc,field[nr][nc][2],field[nr][nc][3]))
+      #stdscr.addstr(0,0, "{0},{1},{2},{3}".format(nr,nc,field[nr][nc][2],field[nr][nc][3]))
       # paint the current cell normally 
       paintcell(stdscr, field[r][c], colors, False)
       # paint the new cell reverse color

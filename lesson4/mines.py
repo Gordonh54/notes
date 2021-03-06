@@ -60,8 +60,8 @@ def paintfield(stdscr, field, size, colors):
 def colordict():
   return {
         "cover": curses.color_pair(9),
-        "flag": curses.color_pair(100), 
-        "blasted": curses.color_pair(161),
+        "flag": curses.color_pair(161), 
+        "blasted": curses.color_pair(233),
         #"-1": curses.color_pair(16), not using this
         "-1": curses.color_pair(161),
         "0": curses.color_pair(1),
@@ -85,7 +85,9 @@ def paintcell(stdscr, cell, colors, reverse=False, show=False):
   if cell[3] == "flagged":
     cell_ch = chr(9873)
     cell_color = colors['flag']
-
+  if cell[3] == "blasted":
+    cell_ch = chr(10041)
+    cell_color = colors["blasted"]
   if cell[3] == "open":
     if cell[2] == -1:
       cell_ch = chr(10041)
@@ -126,6 +128,8 @@ current method; might replace later """
 #simplify
 def digcell(stdscr, cell, field, size, colors):
   if cell[2] == -1 and cell[3]!="flagged":
+    #move bottom
+    cell[3] = "blasted"
     blast(stdscr, field, size, colors)
     return False
   elif cell[3] == "covered" and cell[3]!="flagged":
@@ -154,12 +158,24 @@ def opensurrounding(stdscr, field, row, column, size, colors):
       
   return False
 
+def checkfield(field, size, index):
+  bombnumber = 0
+  #create a bomb checker
+  #create a bomb counter
+  for y in range[0, size[0]]:
+    for x in range[0, size[1]]:
+      
+      return 0
+
 def window(stdscr):
   #initialize color pairs
   curses.start_color()
   curses.use_default_colors()
   for i in range(0, curses.COLORS):
-    curses.init_pair(i + 1, i , -1)
+    if i==232:
+      curses.init_pair(i+1, i, curses.COLOR_RED)
+    else:
+      curses.init_pair(i + 1, i , -1)
   #remove cursor
   curses.curs_set(0)
   #activate sh and sw, find center of board, and create a list for colors
@@ -203,13 +219,12 @@ def window(stdscr):
       elif userkey in [100]:
         #dig cell, if a mine all mines are dug
         gameover = digcell(stdscr, field[r][c], field, size, colors)
-        if field[r][c][2] == -1:
-          field[r][c][3] =="blasted"
       elif userkey in [32]:
         gameover = opensurrounding(stdscr, field, r,c, size, colors)
 
+
       stdscr.addstr(0,0,"                                             ")
-      #stdscr.addstr(0,0, "{0},{1},{2},{3}".format(nr,nc,field[nr][nc][2],field[nr][nc][3]))
+      stdscr.addstr(0,0, "{0},{1},{2},{3}".format(nr,nc,field[nr][nc][2],field[nr][nc][3]))
       # paint the current cell normally 
       paintcell(stdscr, field[r][c], colors, False)
       # paint the new cell reverse color
@@ -224,3 +239,12 @@ def window(stdscr):
     
 
 curses.wrapper(window)
+
+#clean digcell and open surrounding
+#^fix space not ending game
+#stopwatch
+#bomb counter
+#give message to tell people to make screen bigger or else
+#Xs on the wrong flags
+#highlight triggered bombs
+#border (last priority)

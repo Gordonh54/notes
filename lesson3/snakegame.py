@@ -105,7 +105,6 @@ def window(stdscr):
         else:
           applecolor -= 1
 
-        
       #draw the snake and arrows around it
       for point in snake:
         stdscr.addstr(point[0], point[1], snake_chr, curses.color_pair(snakecolor))

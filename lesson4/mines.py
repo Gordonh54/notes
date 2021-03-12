@@ -177,6 +177,14 @@ def checkfield(field, size, index=0):
   elif index == 0:
     return bombnumber
 
+def printtime(stdscr, x, watch, secs, mins, hours):
+  timearray = [str(watch), str(secs), str(mins), str(hours)]
+  for i in range(0, len(timearray)):
+    if len(timearray[i]) < 2:
+      timearray[i] = "{0}{1}".format("0",timearray[i])
+  stdscr.addstr(0,x,"{0}:{1}:{2}:{3}".format(timearray[3],timearray[2],timearray[1],timearray[0]))
+  return False
+
 def window(stdscr):
   #initialize color pairs
   curses.start_color()
@@ -196,8 +204,15 @@ def window(stdscr):
   # set this a list [row, column]
   size = [10, 20]
 
+  stdscr.nodelay(True)
+  stdscr.timeout(10)
+
   while True:
     gameover = True
+    stopwatch = 0
+    secs = 0
+    stopwatchmin = 0
+    stopwatchhour = 0
     field = initfield(center, size)
     bombnumber = checkfield(field,size)
     safenumber = math.prod(size) - bombnumber
@@ -213,6 +228,8 @@ def window(stdscr):
       clearrow(stdscr,sw, 0)
       stdscr.addstr(0,0, "{0},{1},{2},{3}".format(nr,nc,field[nr][nc][2],field[nr][nc][3]))
       stdscr.addstr(0,field[0][0][1], "{0} {1}".format(chr(9873), str(bombnumber - flagnumber)))
+      #display time
+      printtime(stdscr, field[0][-6][1], stopwatch, secs, stopwatchmin, stopwatchhour)
       userkey = stdscr.getch()
       # 27 ESC, 113 is q
       if userkey in [27, 113]:
@@ -250,7 +267,19 @@ def window(stdscr):
       gameover = checkfield(field,size, 1)
       if safenumber == checkfield(field, size, 3):
         gameover = False
+      stopwatch+=1
+      if stopwatch == 100:
+        stopwatch =0
+        secs += 1
+      if secs == 60:
+        secs = 0
+        stopwatchmin += 1
+      if stopwatchmin == 60:
+        stopwatchmin =0
+        stopwatchhour+=1
 
+
+    #ending the game
     if safenumber != checkfield(field, size, 3):
       blast(stdscr, field, size, colors)
       gameoverfunction(stdscr, colors)
@@ -282,6 +311,6 @@ curses.wrapper(window)
 #stopwatch
 #bomb counter *
 #give message to tell people to make screen bigger or else
-#Xs on the wrong flags
+#Xs on the wrong flags*
 #highlight triggered bombs
 #border (last priority)

@@ -1,15 +1,16 @@
 import curses
 import math
 import random
+import datetime
 
 
 gameover=True
 
 
-def clearrow(stdscr, sw,y):
-  space = " "
-  stdscr.addstr(y,0,space*sw)
 
+#-----------------------------------------------------
+#managing the field
+#-----------------------------------------------------
 def initfield(center, size):
   
   field = []
@@ -54,11 +55,43 @@ def initfield(center, size):
 
   return field
 
-def paintfield(stdscr, field, size, colors):
-    for r in range(0, size[0]):
-        for c in range(0, size[1]):
-            paintcell(stdscr, field[r][c], colors)
+def checkfield(field, size, index=0):
+  bombnumber = 0
+  flagnumber = 0
+  safenumber =0
+  #create a bomb checker
+  #create a bomb counter
+  for y in range(0, size[0]):
+    for x in range(0, size[1]):
+      if field[y][x][2] == -1:
+        bombnumber+=1
+        if field[y][x][3] == "blasted":
+          return False
+      elif field[y][x][3] == "open":
+        safenumber +=1
+      if field[y][x][3] == "flagged":
+        flagnumber +=1
+  if index == 1: 
+    return True
+  elif index == 2: #for number of flags
+    return flagnumber
+  elif index == 3: return safenumber #number of safe squares opened
+  elif index == 0:
+    return bombnumber
 
+def win(field, size):
+  for y in range(0, size[0]):
+    for x in range(0,size[1]):
+      if field[y][x][2] != -1:
+        field[y][x][3] = "open"
+
+def gameoverfunction(stdscr, colors):
+  sh, sw = stdscr.getmaxyx()
+  gameovermsg="haha you lose"
+  stdscr.addstr(1, sw//2-len(gameovermsg)//2, gameovermsg, curses.color_pair(161))
+#-----------------------------------------------------
+#-----------------------------------------------------
+#color
 def colordict():
   return {
         "wrong": curses.color_pair(161),
@@ -77,7 +110,13 @@ def colordict():
         "7": curses.color_pair(2), # 
         "8": curses.color_pair(8), #
   }
-
+#-----------------------------------------------------
+#Relating to drawing on the screen
+#-----------------------------------------------------
+def paintfield(stdscr, field, size, colors):
+    for r in range(0, size[0]):
+        for c in range(0, size[1]):
+            paintcell(stdscr, field[r][c], colors)
 def paintcell(stdscr, cell, colors, reverse=False, show=False):
   
   # decide the cell character and cell color
@@ -106,13 +145,13 @@ def paintcell(stdscr, cell, colors, reverse=False, show=False):
     cell_color = curses.A_REVERSE
 
   stdscr.addstr(cell[0], cell[1], cell_ch, cell_color)
-
-def gameoverfunction(stdscr, colors):
-  sh, sw = stdscr.getmaxyx()
-  gameovermsg="haha you lose"
-  stdscr.addstr(1, sw//2-len(gameovermsg)//2, gameovermsg, curses.color_pair(161))
-
-#open all mines
+def clearrow(stdscr, sw,y):
+  space = " "
+  stdscr.addstr(y,0,space*sw)
+#-----------------------------------------------------
+#-----------------------------------------------------
+#Relating to controls
+#-----------------------------------------------------
 def blast(stdscr, field, size, colors): 
   for y in range(0, size[0]):
     for x in range(0, size[1]):
@@ -123,13 +162,11 @@ def blast(stdscr, field, size, colors):
         field[y][x][3] = "wrong"
         paintcell(stdscr, field[y][x], colors)
         
-
 def flagcell(cell):
   if cell[3] == "flagged":
     cell[3] = "covered"
   elif cell[3] == "covered":
     cell[3] = "flagged"
-
 
 """
 current method; might replace later """
@@ -152,39 +189,30 @@ def opensurrounding(stdscr, field, row, column, size, colors):
         if field[r][c][2] == 0:
           opensurrounding(stdscr,field, r, c, size, colors)
         #if the square is 0, dig then opensurrounding
-    
-def checkfield(field, size, index=0):
-  bombnumber = 0
-  flagnumber = 0
-  safenumber =0
-  #create a bomb checker
-  #create a bomb counter
-  for y in range(0, size[0]):
-    for x in range(0, size[1]):
-      if field[y][x][2] == -1:
-        bombnumber+=1
-        if field[y][x][3] == "blasted":
-          return False
-      elif field[y][x][3] == "open":
-        safenumber +=1
-      if field[y][x][3] == "flagged":
-        flagnumber +=1
-  if index == 1: 
-    return True
-  elif index == 2: #for number of flags
-    return flagnumber
-  elif index == 3: return safenumber #number of safe squares opened
-  elif index == 0:
-    return bombnumber
+#-----------------------------------------------------
+#-----------------------------------------------------
+#Managing the leaderboard
+#-----------------------------------------------------
+#at beginning of game round:
+#read
+#put it on the game right bar or soemthing
+#split each user score by \n : list.split("\n")
+#in each user score, split by space leaderboard[[score, name],[score, name],[score,name]] etc. 
+#turn the score into an integer
+#sorting method at end of game:
+#if person's score < last score on the list: ask for name and make it the second item on list 
+#append and add their score
+#sort method (find on sean's replit minesweeper/sorting.py)
+#pop out last one
+#write to file
+#-----------------------------------------------------
+#-----------------------------------------------------
 
-def printtime(stdscr, x, watch, secs, mins, hours):
-  timearray = [str(watch), str(secs), str(mins), str(hours)]
-  for i in range(0, len(timearray)):
-    if len(timearray[i]) < 2:
-      timearray[i] = "{0}{1}".format("0",timearray[i])
-  stdscr.addstr(0,x,"{0}:{1}:{2}:{3}".format(timearray[3],timearray[2],timearray[1],timearray[0]))
-  return False
 
+
+#
+#GAME
+#
 def window(stdscr):
   #initialize color pairs
   curses.start_color()
@@ -205,14 +233,14 @@ def window(stdscr):
   size = [10, 20]
 
   stdscr.nodelay(True)
-  stdscr.timeout(10)
+  stdscr.timeout(100)
+
+  highscore =0
+  hudenable = 0
 
   while True:
     gameover = True
-    stopwatch = 0
-    secs = 0
-    stopwatchmin = 0
-    stopwatchhour = 0
+    initialtime = datetime.datetime.now()
     field = initfield(center, size)
     bombnumber = checkfield(field,size)
     safenumber = math.prod(size) - bombnumber
@@ -221,15 +249,22 @@ def window(stdscr):
     nr, nc = 0, 0
     # paint the top left cell reverse color.
     paintcell(stdscr, field[r][c], colors, True)
-    clearrow(stdscr,sw,1)
+    
+    #stdscr.addstr(1,0,"height:{0}\n width:{1}".format(sh, sw))
+    
     
     while gameover:
       flagnumber = checkfield(field,size,2)
       clearrow(stdscr,sw, 0)
-      stdscr.addstr(0,0, "{0},{1},{2},{3}".format(nr,nc,field[nr][nc][2],field[nr][nc][3]))
+      #hud
+      if hudenable == 1:
+        stdscr.addstr(0,0, "{0},{1},{2},{3}".format(nr,nc,field[nr][nc][2],field[nr][nc][3]))
+      #flag
       stdscr.addstr(0,field[0][0][1], "{0} {1}".format(chr(9873), str(bombnumber - flagnumber)))
       #display time
-      printtime(stdscr, field[0][-6][1], stopwatch, secs, stopwatchmin, stopwatchhour)
+      currenttime = datetime.datetime.now()
+      stopwatch = currenttime-initialtime
+      stdscr.addstr(0, field[0][-4][1], str(stopwatch.seconds))
       userkey = stdscr.getch()
       # 27 ESC, 113 is q
       if userkey in [27, 113]:
@@ -256,7 +291,18 @@ def window(stdscr):
           opensurrounding(stdscr,field,r,c,size, colors)
       elif userkey in [32]:
         opensurrounding(stdscr, field, r,c, size, colors)
-
+    
+      #cheat keys TAB to hud and / to win
+      elif userkey in  [47]:
+        win(field, size)
+        paintfield(stdscr, field, size, colors)
+      elif userkey in [9]:
+        if hudenable == 1:
+          hudenable =0
+        elif hudenable == 0:
+          hudenable=1
+        #win
+      
       # paint the current cell normally 
       paintcell(stdscr, field[r][c], colors, False)
       # paint the new cell reverse color
@@ -267,16 +313,7 @@ def window(stdscr):
       gameover = checkfield(field,size, 1)
       if safenumber == checkfield(field, size, 3):
         gameover = False
-      stopwatch+=1
-      if stopwatch == 100:
-        stopwatch =0
-        secs += 1
-      if secs == 60:
-        secs = 0
-        stopwatchmin += 1
-      if stopwatchmin == 60:
-        stopwatchmin =0
-        stopwatchhour+=1
+      
 
 
     #ending the game
@@ -286,8 +323,18 @@ def window(stdscr):
     elif safenumber == checkfield(field, size, 3):
       gamewinmsg = "you win!"
       stdscr.addstr(1, sw//2-len(gamewinmsg)//2, gamewinmsg, curses.color_pair(11))
+      
+      #currenttime = datetime.datetime.now()
+      #stopwatch = currenttime-initialtime
+      currentscore = int(stopwatch.seconds)
+      if currentscore < highscore or highscore == 0:
+        highscore = currentscore
+      scoremsg = "Score: {0} Highscore: {1}".format(currentscore, highscore)
+      stdscr.addstr(3, sw//2-len(scoremsg)//2,scoremsg)
+    
     newgame = "ENTER for new game, ESC or q to leave"
     stdscr.addstr(2, sw//2-len(newgame)//2,newgame)
+    
     if userkey in [27, 133]:
       break
     while True:
@@ -302,15 +349,11 @@ def window(stdscr):
     for i in range(0,4):
       clearrow(stdscr,sw,i)
     
-    
 
 curses.wrapper(window)
 
-#clean digcell and open surrounding *
-#^fix space not ending game *
-#stopwatch
-#bomb counter *
-#give message to tell people to make screen bigger or else
-#Xs on the wrong flags*
-#highlight triggered bombs
-#border (last priority)
+#add levels (mines and size of game)
+#name writing function
+#leaderboard
+#read and write, string split
+#border

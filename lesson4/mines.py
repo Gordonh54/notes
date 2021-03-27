@@ -180,7 +180,7 @@ def digcell(stdscr, cell, field, size, colors):
 
 #currently it only opens one square
 def opensurrounding(stdscr, field, row, column, size, colors):
-  if field[row][column][3] != "covered" or field[row][column][3] !="flagged": 
+  if field[row][column][3] == "open": 
     for r in [row-1, row, row+1]:
       for c in [column-1, column, column+1]:
         if r < 0 or r > size[0] - 1 or c < 0 or c > size[1] - 1 or field[r][c][3] == "open":
@@ -370,10 +370,11 @@ def window(stdscr):
         digcell(stdscr, field[r][c], field, size, colors)
         if field[r][c][2] == 0:
           opensurrounding(stdscr,field,r,c,size, colors)
+
       elif userkey in [32] and field[r][c][3] == "open":
         opensurrounding(stdscr, field, r,c, size, colors)
-    
-      #cheat keys TAB to hud and / to win
+      """
+      #TAB and /
       elif userkey in  [47]:
         win(field, size)
         paintfield(stdscr, field, size, colors)
@@ -383,7 +384,7 @@ def window(stdscr):
         elif hudenable == 0:
           hudenable=1
         #win
-      
+      """
       # paint the current cell normally 
       paintcell(stdscr, field[r][c], colors, False)
       # paint the new cell reverse color

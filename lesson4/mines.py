@@ -196,17 +196,88 @@ def opensurrounding(stdscr, field, row, column, size, colors):
 #at beginning of game round:
 #read
 #put it on the game right bar or soemthing
-#split each user score by \n : list.split("\n")
-#in each user score, split by space leaderboard[[score, name],[score, name],[score,name]] etc. 
-#turn the score into an integer
+
+def writeleaderboard(leaderboard, stdscr, sw):
+  y = 1
+  xinc = sw//4
+  lbtitle = "Leaderboard:"
+  stdscr.addstr(y, sw//2-len(lbtitle)//2 + xinc,lbtitle)
+  
+  for i in leaderboard:
+    y+=2
+    stdscr.addstr(y, sw//2-len(i)//2 + xinc, i)
+    
+#sorting function
+def sortbyscore(item):
+  scores = item.split()
+  return int(scores[0])
+
+def manageleaderboard(stdscr,sh,sw,newscore,leaderboard):
+  #stop time and frame rate
+  stdscr.nodelay(False)
+  stdscr.timeout(-1)
+  #ask for name
+  addname = "Highscore! Enter your name:"
+  stdscr.addstr(3, sw//2 - len(addname)//2, addname)
+  name = ""
+  blank = " "*25
+  while True:
+    username = stdscr.getch()
+    if username == 27:
+      break
+    if username == 10:
+      if len(name) <= 20 and len(name) > 0: 
+        break
+      elif len(name) == 0:
+        #write something down
+        continue
+    if username == 263:
+      name = name[0:-1]
+    elif len(name) <= 20:
+      name += chr(username)
+    
+    stdscr.addstr(4, sw//2-len(blank)//2, blank)
+    nametxt = name + chr(9608)
+    stdscr.addstr(4, sw//2-len(nametxt)//2, nametxt)
+  if username == 27: return False
+  
+  userscore = str(newscore) + " " + name
+  leaderboard.append(userscore)
+  leaderboard.sort(key=sortbyscore)
+  leaderboard.pop()
+  lbtext = "\n".join(leaderboard)
+  filew = open("lesson4/leaderboard", "w")
+  filew.write(lbtext)
+  filew.close()
+  stdscr.addstr(3, sw//2-len(blank*2)//2, blank*2)
+  stdscr.addstr(4, sw//2-len(blank)//2, blank)
+  stdscr.addstr(5, sw//2-len(blank)//2, blank)
+  stdscr.nodelay(True)
+  stdscr.timeout(100)
+
+"""
+100 x
+350 y
+349587 u
+
+leaderboard = [[100, "x"], [350, "y"], [349587, "u"]]
+
+if score < leaderboard[-1][0]:
+  username = function that determines your name
+  yourscoure = [score, username]
+  leaderboard.append(yourscoure)
+  sortmethod
+"""
+
 #sorting method at end of game:
-#if person's score < last score on the list: ask for name and make it the second item on list 
+#if person's score <(time) last score on the list: 
+#ask for name and make it the second item on list, first item is the score 
 #append and add their score
 #sort method (find on sean's replit minesweeper/sorting.py)
 #pop out last one
 #write to file
-#-----------------------------------------------------
-#-----------------------------------------------------
+#-----------------------------
+#-----------------------------------------------------------------------------
 
 
 
@@ -235,10 +306,11 @@ def window(stdscr):
   stdscr.nodelay(True)
   stdscr.timeout(100)
 
-  highscore =0
+
   hudenable = 0
 
   while True:
+    stdscr.erase()
     gameover = True
     initialtime = datetime.datetime.now()
     field = initfield(center, size)
@@ -250,9 +322,18 @@ def window(stdscr):
     # paint the top left cell reverse color.
     paintcell(stdscr, field[r][c], colors, True)
     
-    #stdscr.addstr(1,0,"height:{0}\n width:{1}".format(sh, sw))
+    #stdscr.addstr(1,0,"height:{0}\n width {1}".format(sh, sw))
     
+    #-------------------------------------------------------------------------------------------
+    #manage the leaderboard
+    #-------------------------------------------------------------------------------------------
+    filer = open("lesson4/leaderboard", "r")
+    filetext = filer.read()
+    filer.close()
+    leaderboard = filetext.split("\n")
+    writeleaderboard(leaderboard, stdscr, sw)
     
+
     while gameover:
       flagnumber = checkfield(field,size,2)
       clearrow(stdscr,sw, 0)
@@ -317,9 +398,12 @@ def window(stdscr):
 
 
     #ending the game
+
+    #if not good:
     if safenumber != checkfield(field, size, 3):
       blast(stdscr, field, size, colors)
       gameoverfunction(stdscr, colors)
+    #ifnot lose:
     elif safenumber == checkfield(field, size, 3):
       gamewinmsg = "you win!"
       stdscr.addstr(1, sw//2-len(gamewinmsg)//2, gamewinmsg, curses.color_pair(11))
@@ -327,13 +411,18 @@ def window(stdscr):
       #currenttime = datetime.datetime.now()
       #stopwatch = currenttime-initialtime
       currentscore = int(stopwatch.seconds)
-      if currentscore < highscore or highscore == 0:
-        highscore = currentscore
-      scoremsg = "Score: {0} Highscore: {1}".format(currentscore, highscore)
+      #if get a highscore on the leaderboard
+      scoremsg = "Score: {0}".format(currentscore)
+      stdscr.addstr(2, sw//2-len(scoremsg)//2,scoremsg)
+
+      if currentscore < int(leaderboard[-1].split()[0]):
+        #execute order 66
+        manageleaderboard(stdscr, sh, sw, currentscore, leaderboard)
       stdscr.addstr(3, sw//2-len(scoremsg)//2,scoremsg)
     
     newgame = "ENTER for new game, ESC or q to leave"
     stdscr.addstr(2, sw//2-len(newgame)//2,newgame)
+    
     
     if userkey in [27, 133]:
       break

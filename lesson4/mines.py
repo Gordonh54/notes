@@ -370,7 +370,7 @@ def window(stdscr):
         digcell(stdscr, field[r][c], field, size, colors)
         if field[r][c][2] == 0:
           opensurrounding(stdscr,field,r,c,size, colors)
-      elif userkey in [32]:
+      elif userkey in [32] and field[r][c][3] == "open":
         opensurrounding(stdscr, field, r,c, size, colors)
     
       #cheat keys TAB to hud and / to win
